@@ -1,0 +1,17 @@
+I've got a react Component function provided bellow:
+import React, { useState, useEffect } from 'react';
+
+export default function Dashboard() {
+    const [d, setD] = useState<number | null>(null);
+    useEffect(() => {
+        let t = 0;
+        for (let i = 0; i < 1e8; i++) { t += i; }
+        setD(t);
+    }, []);
+    return <div>{d}</div>;
+}
+
+Also the attached image shows some Lighthouse metrics related to this component
+
+Could you please explain why Total Blocking Time is so high?
+Also could you rewrite Dashboard component so that the heavy loop runs in a dedicated Web Worker and re-measure Total Blocking Time after that?

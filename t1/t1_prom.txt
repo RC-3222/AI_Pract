@@ -1,0 +1,16 @@
+Could you please recreate the UI, which is displayed on a provided reference, as a single React function component?
+
+Main requirements
+- The component should be called PricingCard
+- You should also use TypeScript as a base language
+- Styling should be done using TailwindCSS ONLY, WITHOUT any additional inline styles
+
+Component's props should be:
+1. plan: string
+2. price: string
+3. features: string[]
+4. isFeatured?: boolean
+
+Additional requirements for its behaviour: 
+- stack cards vertically for screen width bellow 640px, with hover elevation on desktop
+- The created component should also feature a full keyboard focus ring

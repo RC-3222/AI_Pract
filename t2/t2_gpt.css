@@ -1,0 +1,52 @@
+/* Ответ GPT */
+/*
+Пояснения от нейронки:
+The issue you're describing — the menu being initially visible with a transition when it shouldn't — is a common problem caused by the lack of initial visibility control or inconsistent initial transform state when media queries kick in.
+
+✅ Root Cause:
+The menu is always display: flex, even before JavaScript toggles the open class. This means it's rendered and styled immediately, including the transition from translateY(-150%). So when the page loads below 768px, it transitions from its starting position, making it momentarily visible.
+
+✅ Fix:
+You need to hide the menu initially below 768px using an opacity or visibility: hidden, then show it only when .open is applied. Also, avoid relying on just transform for visibility.
+
+✅ Summary:
+-Added opacity and pointer-events to ensure the menu is hidden and non-interactive by default.
+-.menu.open reveals it smoothly.
+-This avoids the flash of the menu appearing on initial page load at smaller viewports.
+
++ предложение написать базовый JS-скрипт под это в конце
+*/
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu {
+  display: flex;
+  gap: 2rem;
+}
+
+@media (max-width: 768px) {
+  .menu {
+    flex-direction: column;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    width: 100%;
+    background: #fff;
+
+    /* Visibility control */
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-150%);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .menu.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+}

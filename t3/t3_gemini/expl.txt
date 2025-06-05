@@ -1,0 +1,42 @@
+Why Total Blocking Time (TBT) is so High
+Total Blocking Time (TBT) measures the total amount of time that the main thread was blocked for long enough to prevent user input responsiveness during page load. A "long task" is any JavaScript task that runs on the main thread for more than 50 milliseconds (ms). TBT is the sum of the "blocking" portion of all long tasks between First Contentful Paint (FCP) and Time To Interactive (TTI). The blocking portion is the time over 50ms.
+In your original Dashboard component:
+- useEffect(()=>{...}, []): This hook runs after the component has rendered for the first time.
+- Synchronous Heavy Loop:
+let t=0;
+    for(let i=0;i<1e8;i++){ t+=i; } // 100 million iterations!
+setD(t);
+JavaScript
+This loop is a very CPU-intensive operation. JavaScript is single-threaded (for the main browser context). When this loop runs, it completely blocks the main thread.
+- Blocking the Main Thread: While this loop is executing:
+The browser cannot respond to any user interactions (clicks, scrolls, typing).
+It cannot perform any rendering updates.
+It cannot process other JavaScript tasks.
+- Lighthouse Measurement: Lighthouse detects this long-running synchronous task on the main thread. If this loop takes, for example, 500ms to complete, then (500ms - 50ms) = 450ms will be added to your Total Blocking Time from this task alone. Even though it's in useEffect, it's still a main thread operation that occurs relatively early in the page's interactive lifecycle.
+Essentially, that massive for loop monopolizes the CPU on the main thread, making the page unresponsive until it completes, leading to a high TBT.
+
+Rewriting with a Web Worker
+
+To fix this, we'll move the heavy computation into a Web Worker. This allows the loop to run on a separate background thread, freeing up the main thread to remain responsive.
+1. Create the Worker File (e.g., heavyLoop.worker.js)
+This file will contain the code for the heavy computation.
+2. Modify the Dashboard Component
+The component will create the worker, send it a message to start, and listen for the result.
+
+(Здесь также был код, раскиданный тут по файлам)
+
+Explanation of Changes:
+- Worker Instantiation:
+We create a new Worker. The path to the worker script is crucial.
+For Create React App (CRA): You typically put the worker file in the public folder and reference it using process.env.PUBLIC_URL. CRA doesn't natively bundle workers in the same way other module bundlers do without custom configuration (e.g., using worker-loader or ejecting).
+For Vite/Next.js/other modern bundlers: These often have built-in support or easier plugin integration for web workers. The new URL('./path/to/worker.js', import.meta.url) pattern is common, which tells the bundler to treat the worker as a separate entry point. The { type: 'module' } option allows you to use ES modules inside your worker.
+- workerInstance.onmessage: This event handler listens for messages sent back from the worker. When the worker finishes its calculation and calls self.postMessage(result), this handler receives it and updates the component's state using setD(event.data).
+- workerInstance.onerror: Good practice to handle potential errors from the worker.
+- workerInstance.postMessage(...): This sends a message to the worker, triggering its self.onmessage handler and starting the heavy loop.
+- Cleanup (return () => { ... }): This is vital. When the Dashboard component unmounts, we must terminate the worker using workerInstance.terminate(). Otherwise, the worker thread would keep running in the background, potentially causing memory leaks or consuming resources unnecessarily.
+- State Update: The UI now shows "Calculating in worker..." initially and updates to "Result: ..." once the worker returns the data. The main thread remains unblocked during the calculation.
+
+Re-measuring Total Blocking Time:
+(Описание того, как это всё измерять)
+Expected Outcome:
+You should see a significant reduction in your Total Blocking Time. The heavy computation is now offloaded to the worker thread, so the main thread isn't blocked for a long period. The main thread will only briefly handle sending the message to the worker and receiving the result, which are very quick operations. This means the page will feel much more responsive during its initial load and processing phase.

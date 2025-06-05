@@ -1,0 +1,53 @@
+Why is Total Blocking Time (TBT) High?
+Total Blocking Time (TBT) measures the amount of time a page is blocked from responding to user input — like clicks, taps, or keyboard interactions — during the page load.
+
+In your component:
+
+useEffect(() => {
+  let t = 0;
+  for (let i = 0; i < 1e8; i++) {
+    t += i;
+  }
+  setD(t);
+}, []);
+
+This CPU-intensive loop (for (let i = 0; i < 1e8; i++)) runs on the main thread, blocking it for a significant amount of time. While it runs, the browser cannot respond to user interactions, leading to a high TBT in Lighthouse metrics.
+
+Solution: Move the Heavy Work to a Web Worker
+Here's how you can rewrite your Dashboard component to offload the computation into a Web Worker:
+
+Step 1: Create a worker.ts
+(Код webworker.ts)
+
+Step 2: Update the Dashboard Component
+(обновленный код Dashboard.tsx)
+import React, { useState, useEffect } from 'react';
+
+export default function Dashboard() {
+  const [d, setD] = useState<number | null>(null);
+
+  useEffect(() => {
+    const worker = new Worker(new URL('/worker.js', import.meta.url), {
+      type: 'module',
+    });
+
+    worker.onmessage = (e) => {
+      setD(e.data);
+      worker.terminate();
+    };
+
+    worker.postMessage(null);
+  }, []);
+
+  return <div>{d}</div>;
+}
+
+NOTE: If your build setup (like Vite or Create React App) doesn't allow dynamic new Worker() with URLs like above, you may need to use worker-loader or similar tools in webpack, or create a custom hook with a Blob-based worker inline.
+
+Expected Result After Moving to Web Worker
+
+Once the heavy loop is off the main thread:
+- Main thread stays responsive
+- TBT drops significantly
+- Lighthouse metrics improve, especially TBT and Performance Score
+

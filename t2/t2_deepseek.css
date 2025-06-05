@@ -1,0 +1,49 @@
+/* Ответ Deepseek */
+/*
+The issue you're experiencing is likely due to the menu's initial state being visible before the JavaScript toggles the "open" class, causing a flash of the menu in its closed position (translateY(-150%)) before the transition is applied.
+*/
+.nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu {
+    display: flex;
+    gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    .menu {
+        flex-direction: column;
+        position: absolute;
+        top: 64px;
+        left: 0;
+        width: 100%;
+        background: #fff;
+        /* Hide the menu initially */
+        transform: translateY(-150%);
+        /* Add visibility to prevent flash */
+        visibility: hidden;
+        transition: transform 0.3s ease, visibility 0.3s ease;
+    }
+
+    .menu.open {
+        transform: translateY(0);
+        visibility: visible;
+    }
+}
+/*
+
+Key changes made:
+- Added visibility: hidden to the base .menu state to ensure it's not visible initially
+- Modified the transition to include both transform and visibility properties
+- Added visibility: visible to the .menu.open state
+
+This solution will:
+- Prevent the menu from being briefly visible on page load
+- Maintain the smooth sliding animation when toggled
+- Properly hide the menu when closed (both visually and for accessibility)
+
+The transition will now work smoothly without any initial flash of the menu in its closed state. When the "open" class is toggled, the menu will smoothly slide into view, and when closed, it will slide out and become properly hidden.
+*/
